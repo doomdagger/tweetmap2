@@ -1,12 +1,18 @@
+#!/usr/bin/env python
 # Twitter Streaming Script
 
-import tweepy
+import json
+import sys
+import logging
+
 import boto3
 import langdetect
-import json
+import tweepy
+import daemon
 
 __author__ = 'He Li'
 sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
+logging.basicConfig(filename='twitter_sqs.log', level=logging.INFO)
 
 
 # custom listener
@@ -37,21 +43,45 @@ class MyStreamListener(tweepy.StreamListener):
                                             'timestamp_ms': status.timestamp_ms
                                         }))
             except Exception as inst:
-                print inst
+                logging.error(inst)
             else:
                 # print message for debug
-                print 'Tweet(#{id}) fetched'.format(id=status.id_str)
+                logging.info('Tweet(#{id}) fetched'.format(id=status.id_str))
 
     def on_error(self, status_code):
         if status_code == 420:
             return False
 
 
-# Twitter Auth
-auth = tweepy.OAuthHandler('piXrIVqsVCwtrAMZ24eC3VXBR', 'gU8uMs4TPErN0CvJogyU9mupoDvenxMaN7ZbeMHHvVpCTkb3LP')
-auth.set_access_token('699071431536152580-A5LQ0zP4D7s8AHVwECsNbne5uQVwvWa',
-                      'E2x5miRE6gyyXTSWuYsTnPNcPrORcWP2F6RASWEHjRTdY')
+# daemon
+class MyDaemon(daemon.Daemon):
+    def __init__(self, pid_file):
+        super(MyDaemon, self).__init__(pid_file)
+        # Twitter Auth
+        auth = tweepy.OAuthHandler('piXrIVqsVCwtrAMZ24eC3VXBR', 'gU8uMs4TPErN0CvJogyU9mupoDvenxMaN7ZbeMHHvVpCTkb3LP')
+        auth.set_access_token('699071431536152580-A5LQ0zP4D7s8AHVwECsNbne5uQVwvWa',
+                              'E2x5miRE6gyyXTSWuYsTnPNcPrORcWP2F6RASWEHjRTdY')
+        self.myStream = tweepy.Stream(auth=auth, listener=MyStreamListener())
 
-myStream = tweepy.Stream(auth=auth, listener=MyStreamListener())
-# start to fetch tweets
-myStream.filter(track=['job'], async=False)
+    def run(self):
+        # start to fetch tweets
+        self.myStream.filter(track=['job'], async=False)
+
+
+# main logic
+if __name__ == "__main__":
+    daemon = MyDaemon('/tmp/twitter_sqs.pid')
+    if len(sys.argv) == 2:
+        if 'start' == sys.argv[1]:
+            daemon.start()
+        elif 'stop' == sys.argv[1]:
+            daemon.stop()
+        elif 'restart' == sys.argv[1]:
+            daemon.restart()
+        else:
+            print "Unknown command"
+            sys.exit(2)
+        sys.exit(0)
+    else:
+        print "usage: %s start|stop|restart" % sys.argv[0]
+        sys.exit(2)
