@@ -7,7 +7,10 @@ import hashlib
 import textblob
 import json
 
+__author__ = 'He Li'
 thread_num = 5
+sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
+sns_topic_arn = 'arn:aws:sns:us-west-2:523930296417:tweetmap'
 
 
 # Analyzer Class
@@ -21,10 +24,10 @@ class Analyzer(threading.Thread):
     def run(self):
         while True:
             response = self.sqs.receive_message(
-                    QueueUrl='https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap',
-                    MaxNumberOfMessages=10,
-                    VisibilityTimeout=15,
-                    WaitTimeSeconds=10
+                QueueUrl=sqs_queue_url,
+                MaxNumberOfMessages=10,
+                VisibilityTimeout=15,
+                WaitTimeSeconds=10
             )
             # if empty response
             if u'Messages' not in response:
@@ -48,12 +51,12 @@ class Analyzer(threading.Thread):
                 packed_message = json.dumps(parsed_message)
                 # publish to sns topic
                 self.sns.publish(
-                        TopicArn='arn:aws:sns:us-west-2:523930296417:tweetmap',
-                        Message=packed_message
+                    TopicArn=sns_topic_arn,
+                    Message=packed_message
                 )
                 response = self.sqs.delete_message(
-                        QueueUrl='https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap',
-                        ReceiptHandle=message[u'ReceiptHandle']
+                    QueueUrl=sqs_queue_url,
+                    ReceiptHandle=message[u'ReceiptHandle']
                 )
 
 

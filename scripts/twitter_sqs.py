@@ -6,6 +6,7 @@ import langdetect
 import json
 
 __author__ = 'He Li'
+sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
 
 
 # custom listener
@@ -21,7 +22,7 @@ class MyStreamListener(tweepy.StreamListener):
             # send message
             # noinspection PyBroadException
             try:
-                self.queue.send_message(QueueUrl='https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap',
+                self.queue.send_message(QueueUrl=sqs_queue_url,
                                         MessageBody=json.dumps({
                                             'tweet_id': status.id_str,
                                             'place_id': status.place.id,
