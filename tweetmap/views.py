@@ -1,8 +1,9 @@
 # views for app & socket.io
 
-from tweetmap import app, io, es, sns_msg_source
+from tweetmap import app, io, es, sns, sns_msg_source
 from flask import render_template, request, abort
 import json
+import requests
 
 
 @app.route('/')
@@ -10,26 +11,49 @@ def index():
     return render_template('index.html')
 
 
+# Sample JSON request boy
+# {
+#   "Type" : "Notification",
+#   "MessageId" : "da41e39f-ea4d-435a-b922-c6aae3915ebe",
+#   "TopicArn" : "arn:aws:sns:us-west-2:123456789012:MyTopic",
+#   "Subject" : "test",
+#   "Message" : "test message",
+#   "Timestamp" : "2012-04-25T21:49:25.719Z",
+#   "SignatureVersion" : "1",
+#   "Signature" : "EXAMPLElDMXvB8r9R83tGoNn0ecwd5UjllzsvSvbItzfaMpN2nk5HVSw7XnOn=",
+#   "SigningCertURL" : "https://sns.us-west-2.amazonaws.com/SimpleNotificationService.pem",
+#   "UnsubscribeURL" : "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe..."
+# }
 @app.route('/sns', methods=['POST'])
 def sns():
     if u'x-amz-sns-message-type' not in request.headers:
         abort(400)
     message_type = request.headers[u'x-amz-sns-message-type']
-    # validate msg source
-    if u'x-amz-sns-topic-arn' not in request.headers or request.headers[u'x-amz-sns-topic-arn'] != sns_msg_source:
+    # get parsed sns_msg
+    sns_msg = request.get_json(force=True)
+    if sns_msg is None:
         abort(400)
+    # validate signature
+    if u'SignatureVersion' in sns_msg and sns_msg[u'SignatureVersion'] == '1':
+        # TODO: validate message
+        pass
+    else:
+        abort(400)
+
     if message_type == 'Notification':
-        # get parsed sns_msg
-        sns_msg = request.get_json()
         if u'Message' not in sns_msg:
             abort(400)
         # parse original message
         orig_msg = json.loads(sns_msg[u'Message'])
         es.create(index='test-index', doc_type='test-type', body=orig_msg)
     elif message_type == 'SubscriptionConfirmation':
-        print 'SubscriptionConfirmation request'
+        requests.get(sns_msg[u'SubscribeURL'])
+        sns.confirm_subscription(
+            TopicArn=sns_msg[u'TopicArn'],
+            Token=sns_msg[u'Token']
+        )
     elif message_type == 'UnsubscribeConfirmation':
-        print 'UnsubscribeConfirmation request'
+        pass
     else:
-        print 'Unknown request'
+        abort(400)
     return '', 204

@@ -4,6 +4,7 @@
 from flask import Flask
 from flask_socketio import SocketIO
 from elasticsearch import Elasticsearch
+from boto3 import client
 
 __author__ = "He Li"
 
@@ -17,5 +18,7 @@ sns_msg_source = 'arn:aws:sns:us-west-2:523930296417:tweetmap'
 # connect es
 es = Elasticsearch(hosts=['search-tweet2map-lldav6drz4p5byukwym7dplysa.us-west-2.es.amazonaws.com'],
                    port=443, use_ssl=True, verify_certs=True)
+# sns
+sns = client('sns')
 
 import tweetmap.views
