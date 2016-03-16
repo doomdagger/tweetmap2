@@ -1,7 +1,8 @@
 # views for app & socket.io
 
-from tweetmap import app, io, es, sns, sns_msg_source
+from tweetmap import app, io, es, sns
 from flask import render_template, request, abort
+# import M2Crypto
 import json
 import requests
 
