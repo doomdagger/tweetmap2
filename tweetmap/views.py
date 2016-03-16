@@ -104,7 +104,6 @@ def search_keywords(ops):
 # }
 @io.on('search geo')
 def search_keywords(ops):
-    print ops
     if ops is None or u'coordinates' not in ops:
         emit('error', 'no coordinates specified')
     else:
@@ -121,6 +120,5 @@ def search_keywords(ops):
             }
         }
         resp = es.search(index='', doc_type='', body=query_dsl, from_=0, size=300)
-        print resp
         tweets = map(lambda t: t[u'_source'], resp[u'hits'][u'hits'])
         emit('geo search', tweets)
