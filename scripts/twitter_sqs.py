@@ -40,7 +40,7 @@ class MyStreamListener(tweepy.StreamListener):
                 print inst
             else:
                 # print message for debug
-                print status.text
+                print 'Tweet(#{id}) fetched'.format(id=status.id_str)
 
     def on_error(self, status_code):
         if status_code == 420:
