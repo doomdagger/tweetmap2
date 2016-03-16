@@ -2,13 +2,13 @@
 # Twitter Streaming Script
 
 import json
-import sys
 import logging
+import sys
 
 import boto3
 import langdetect
 import tweepy
-import daemon
+from daemon import Daemon
 
 __author__ = 'He Li'
 sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
@@ -54,7 +54,7 @@ class MyStreamListener(tweepy.StreamListener):
 
 
 # daemon
-class MyDaemon(daemon.Daemon):
+class MyDaemon(Daemon):
     def __init__(self, pid_file):
         super(MyDaemon, self).__init__(pid_file)
         # Twitter Auth

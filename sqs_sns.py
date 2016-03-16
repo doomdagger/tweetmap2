@@ -9,8 +9,8 @@ import threading
 import time
 
 import boto3
-import daemon
 import textblob
+from daemon import Daemon
 
 __author__ = 'He Li'
 thread_num = 5
@@ -68,7 +68,7 @@ class Analyzer(threading.Thread):
 
 
 # daemon
-class MyDaemon(daemon.Daemon):
+class MyDaemon(Daemon):
     def __init__(self, pid_file):
         super(MyDaemon, self).__init__(pid_file)
         # initialize all threads
