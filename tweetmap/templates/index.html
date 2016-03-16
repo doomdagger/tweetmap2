@@ -2,9 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Greetings</title>
+    <title>Hello</title>
 </head>
 <body>
 <h1>Hello</h1>
+
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+    var socket = io.connect('http://' + document.domain + ':' + location.port);
+    socket.on('connect', function() {
+        console.log('connected');
+    });
+    socket.on('keywords search', function(tweets) {
+        console.log(tweets);
+    });
+    socket.on('geo search', function(tweets) {
+        console.log(tweets);
+    });
+    function keywords() {
+        socket.emit('search keywords', { page: 0, keywords: ['job'] });
+    }
+    function geo() {
+        socket.emit('search geo', { coordinates: [[-112, 41], [-110, 39]] });
+    }
+</script>
+<button onclick="keywords()">keywords</button>
+<button onclick="geo()">geo</button>
 </body>
 </html>

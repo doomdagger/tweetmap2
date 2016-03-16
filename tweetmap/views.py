@@ -1,11 +1,16 @@
 # views for app & socket.io
 
-from tweetmap import app, io, es, sns
-from flask import render_template, request, abort
 from datetime import datetime
+
+from flask import render_template, request, abort
+from flask_socketio import emit
+from tweetmap import app, io, es, sns
+
 # import M2Crypto
 import json
 import requests
+
+page_size = 50
 
 
 @app.route('/')
@@ -53,8 +58,8 @@ def sns_route():
     elif message_type == 'SubscriptionConfirmation':
         requests.get(sns_msg[u'SubscribeURL'])
         sns.confirm_subscription(
-            TopicArn=sns_msg[u'TopicArn'],
-            Token=sns_msg[u'Token']
+                TopicArn=sns_msg[u'TopicArn'],
+                Token=sns_msg[u'Token']
         )
     elif message_type == 'UnsubscribeConfirmation':
         pass
@@ -63,11 +68,59 @@ def sns_route():
     return '', 204
 
 
+# ops object
+# {
+#   page: Number
+#   keywords: [String, String, ...]
+# }
 @io.on('search keywords')
 def search_keywords(ops):
-    pass
+    # in case of None
+    ops = {} if ops is None else ops
+    page = 0 if u'page' not in ops else ops[u'page']
+    keywords = [] if u'keywords' not in ops else ops[u'keywords']
+    # page configuration
+    item_begin = page * page_size
+    # if it is not an array, make it an array
+    if not isinstance(keywords, list):
+        keywords = [keywords]
+    # start search
+    query_dsl = {
+        'query': {
+            'query_string': {
+                'default_field': 'text',
+                'query': ' OR '.join(keywords)
+            }
+        }
+    }
+    resp = es.search(index='', doc_type='', body=query_dsl, from_=item_begin, size=page_size)
+    tweets = map(lambda t: t[u'_source'], resp[u'hits'][u'hits'])
+    emit('keywords search', tweets)
 
 
+# ops object
+# {
+#   coordinates: [[left_up_point][right_down_point]]
+# }
 @io.on('search geo')
 def search_keywords(ops):
-    pass
+    print ops
+    if ops is None or u'coordinates' not in ops:
+        emit('error', 'no coordinates specified')
+    else:
+        query_dsl = {
+            'query': {
+                'geo_shape': {
+                    'location': {
+                        'shape': {
+                            'type': 'envelope',
+                            'coordinates': ops[u'coordinates']
+                        }
+                    }
+                }
+            }
+        }
+        resp = es.search(index='', doc_type='', body=query_dsl, from_=0, size=300)
+        print resp
+        tweets = map(lambda t: t[u'_source'], resp[u'hits'][u'hits'])
+        emit('geo search', tweets)
