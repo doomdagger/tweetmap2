@@ -32,4 +32,4 @@ def sns():
         print 'UnsubscribeConfirmation request'
     else:
         print 'Unknown request'
-    return 200
+    return '', 204
