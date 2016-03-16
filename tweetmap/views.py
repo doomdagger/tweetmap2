@@ -2,6 +2,7 @@
 
 from tweetmap import app, io, es, sns
 from flask import render_template, request, abort
+from datetime import datetime
 # import M2Crypto
 import json
 import requests
@@ -46,7 +47,9 @@ def sns_route():
             abort(400)
         # parse original message
         orig_msg = json.loads(sns_msg[u'Message'])
-        es.create(index='test-index', doc_type='test-type', body=orig_msg)
+        cur_date = datetime.now()
+        es.create(index='tweets-{y}.{m}.{d}'.format(y=cur_date.year, m=cur_date.month, d=cur_date.day),
+                  doc_type='tweet', body=orig_msg)
     elif message_type == 'SubscriptionConfirmation':
         requests.get(sns_msg[u'SubscribeURL'])
         sns.confirm_subscription(
