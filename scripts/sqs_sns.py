@@ -71,17 +71,17 @@ class Analyzer(threading.Thread):
 class MyDaemon(daemon.Daemon):
     def __init__(self, pid_file):
         super(MyDaemon, self).__init__(pid_file)
+        # initialize all threads
+        self.threads = [Analyzer(i) for i in range(thread_num)]
 
     def run(self):
-        # initialize all threads
-        threads = [Analyzer(i) for i in range(thread_num)]
         # start all threads
-        for thread in threads:
+        for thread in self.threads:
             thread.start()
             # start not in a rush
             time.sleep(0.5)
         # join all threads
-        for thread in threads:
+        for thread in self.threads:
             thread.join()
 
 
