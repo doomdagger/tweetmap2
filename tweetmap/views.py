@@ -25,7 +25,7 @@ def index():
 #   "UnsubscribeURL" : "https://sns.us-west-2.amazonaws.com/?Action=Unsubscribe..."
 # }
 @app.route('/sns', methods=['POST'])
-def sns():
+def sns_route():
     if u'x-amz-sns-message-type' not in request.headers:
         abort(400)
     message_type = request.headers[u'x-amz-sns-message-type']
