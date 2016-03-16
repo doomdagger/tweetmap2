@@ -61,3 +61,13 @@ def sns_route():
     else:
         abort(400)
     return '', 204
+
+
+@io.on('search keywords')
+def search_keywords(ops):
+    pass
+
+
+@io.on('search geo')
+def search_keywords(ops):
+    pass
