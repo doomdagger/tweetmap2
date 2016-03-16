@@ -1,32 +1,221 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Hello</title>
-</head>
-<body>
-<h1>Hello</h1>
+    <title>Tweet Map</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="initial-scale=1.0">
+    <style>
+        html, body {
+            height: 100%;
+        }
 
+        #floating-panel {
+            bottom: 0;
+            left: 0;
+            position: absolute;
+            z-index: 1000;
+        }
+
+        #map {
+            height: 100%;
+        }
+
+        #coord {
+            padding: 5px;
+            color: white;
+            background-color: black;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-1.12.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.css">
+</head>
+
+<body>
+<div id="floating-panel">
+    <div class="ui segment">
+        <button onclick="request('nyc');" class="ui inverted violet button">nyc</button>
+        <button onclick="request('job');" class="ui inverted red button">job</button>
+        <button onclick="request('eat');" class="ui inverted orange button">eat</button>
+        <button onclick="request('study');" class="ui inverted yellow button">study</button>
+        <button onclick="request('china');" class="ui inverted olive button">China</button>
+        <button onclick="request('phone');" class="ui inverted green button">phone</button>
+        <button onclick="request('friend');" class="ui inverted teal button">friend</button>
+        <div class="ui buttons">
+            <button onclick="showMore();" class="ui button">Show More</button>
+            <div class="or"></div>
+            <button id="clearAllButton" onclick="clearData();" class="ui button">Clear All</button>
+        </div>
+    </div>
+</div>
+
+<div id="map"></div>
+<div id="coord"></div>
 <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.4.5/socket.io.min.js"></script>
-<script type="text/javascript" charset="utf-8">
-    var socket = io('http://' + document.domain + ':' + location.port);
-    socket.on('connect', function() {
-        console.log('connected');
-    });
-    socket.on('keywords search', function(tweets) {
-        console.log(tweets);
-    });
-    socket.on('geo search', function(tweets) {
-        console.log(tweets);
-    });
-    function keywords() {
-        socket.emit('search keywords', { page: 0, keywords: ['job'] });
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAqZvJUqsZ5Couc8uORXqsXn85H74fBGyc&callback=initMap"></script>
+<div style="display: none" id="myModel" class="ui basic modal">
+    <div class="header">Instruction</div>
+    <div class="content">
+        <p>Click bottom tags for keyword search.</p>
+        <p>Click markers for details.</p>
+        <p>Left click map for geo-spatial search.</p>
+        <p>Each keyword search will show the last 50 twitters, click Show More for more information.</p>
+    </div>
+    <div class="actions">
+        <div class="ui approve button">Ok</div>
+    </div>
+</div>
+
+<script>
+    $('.ui.basic.modal')
+            .modal('show');
+
+    var map;
+    var data_set = [];
+    var marker_list = [];
+    var infowindow = null;
+    var socket = io(null, {port: location.port, rememberTransport: false});
+
+    var cur_keyword = "";
+    var cur_page_number = 0;
+    var search_coordinate = null;
+
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: {lat: 40.8075, lng: -73.9619},
+            zoom: 8
+        });
+
+        var coord = document.getElementById('coord');
+        map.controls[google.maps.ControlPosition.TOP_CENTER].push(coord);
+        map.addListener('mousemove', function (event) {
+            coord.textContent =
+                    'lat: ' + Math.round(event.latLng.lat()) + ', ' +
+                    'lng: ' + Math.round(event.latLng.lng());
+        });
+
+        google.maps.event.addListener(map, 'click', function (event) {
+            search_coordinate = event.latLng;
+            var request_coordinates = [[(search_coordinate.lng() - 0.1),
+                (search_coordinate.lat() + 0.1)],
+                [(search_coordinate.lng() + 0.1),
+                    (search_coordinate.lat() - 0.1)]];
+            if (request_coordinates[0][0] < -180.0) request_coordinates[0][0] += 360.0;
+            if (request_coordinates[0][1] > 90.0) request_coordinates[0][1] = 90.0;
+            if (request_coordinates[1][0] > 180.0) request_coordinates[1][0] -= 360.0;
+            if (request_coordinates[1][1] < -90.0) request_coordinates[1][1] = -90.0;
+
+            socket.emit('search geo', {coordinates: request_coordinates});
+        });
     }
-    function geo() {
-        socket.emit('search geo', { coordinates: [[-112, 41], [-110, 39]] });
+    google.maps.event.addDomListener(window, 'load', initMap);
+
+
+    function showMarkers() {
+        function addMarker(data) {
+            var marker = new google.maps.Marker({
+                position: {lat: data.location.coordinates[0], lng: data.location.coordinates[1]},
+                map: map
+            });
+            marker.addListener('click', function () {
+                if (infowindow) infowindow.setMap(null);
+                infowindow = new google.maps.InfoWindow({
+                    content: makeContent([data])
+                });
+                infowindow.open(map, this)
+            });
+            marker_list.push(marker);
+        }
+
+        for (var i = marker_list.length; i < data_set.length; i++) {
+            addMarker(data_set[i])
+        }
     }
+
+    function clearData() {
+        data_set = [];
+        cur_keyword = "";
+        cur_page_number = 0;
+
+        if (infowindow) infowindow.setMap(null);
+        clearMarker();
+    }
+
+    function clearMarker() {
+        for (var i = 0; i < marker_list.length; i++) {
+            marker_list[i].setMap(null);
+        }
+        marker_list = [];
+    }
+
+    function showMore() {
+        if (cur_keyword.length > 0) {
+            cur_page_number += 1;
+            socket.emit('search keywords', {
+                page: cur_page_number,
+                keywords: [cur_keyword]
+            });
+        }
+    }
+
+    function request(search_word) {
+        if (cur_keyword != search_word) {
+            clearMarker();
+
+            data_set = [];
+            cur_page_number = 0;
+            cur_keyword = search_word;
+
+            socket.emit('search keywords', {
+                page: cur_page_number,
+                keywords: [cur_keyword]
+            });
+        }
+    }
+
+    function makeContent(data) {
+        if (data.length == 0) return '<div id="content"><div id="bodyContent"><h2 class="ui center aligned icon header">' +
+                '<i class="circular twitter icon"></i>No Tweets Here</h2></div></div>';
+        var contentString = '<div id="content">' +
+                '<div id="siteNotice">' +
+                '</div>' +
+                '<div id="bodyContent">' +
+                '<div class="ui comments">' +
+                '<h3 class="ui dividing header"><i class="small twitter icon"></i>Twitters Here</h3>';
+        data.forEach(function (val) {
+            contentString += '<div class="comment"><a class="avatar">' +
+                    '<img src="' + val.user_profile_image + '"></a>' +
+                    '<div class="content">' +
+                    '<a target="_blank" href="https://twitter.com/' + val.username + '/" class="author">' + val.username + '</a>' +
+                    '<div class="metadata"><span class="date">' + new Date(val.timestamp_ms) + '</span></div>' +
+                    '<div class="text"><a target="_blank" href="https://twitter.com/'+val.username+'/status/'+val.tweet_id+'">' + val.text + '</a></div>' +
+                    '</div></div>';
+        });
+        contentString += '</div>' +
+                '</div>' +
+                '</div>';
+        return contentString;
+    }
+
+
+    socket.on('keywords search', function (data) {
+        data.forEach(function (val) {
+            data_set.push(val);
+        });
+        showMarkers();
+    });
+
+    socket.on('geo search', function (data) {
+        if (infowindow) infowindow.setMap(null);
+        infowindow = new google.maps.InfoWindow({
+            position: search_coordinate,
+            content: makeContent(data),
+            map: map
+        });
+    });
+    socket.on('error', function(err) {
+        console.log(err);
+    });
 </script>
-<button onclick="keywords()">keywords</button>
-<button onclick="geo()">geo</button>
 </body>
 </html>
