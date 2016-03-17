@@ -90,7 +90,7 @@
     var marker_list = [];
     var bounce_marker = null;
     var information_window = null;
-    var socket = io(null, {port: location.port, rememberTransport: false});
+    var socket = io('http://' + document.domain + ':' + location.port);
 
     var cur_keyword = "";
     var cur_page_number = 0;
