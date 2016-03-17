@@ -65,7 +65,8 @@ class MyDaemon(Daemon):
 
     def run(self):
         # start to fetch tweets
-        self.myStream.filter(track=['job'], async=False)
+        self.myStream.filter(track=['job', 'phone', 'love', 'china', 'the', 'a',
+                                    'is', 'am', 'of', 'nyc', 'eat', 'friend', 'are'], async=False)
 
 
 # main logic

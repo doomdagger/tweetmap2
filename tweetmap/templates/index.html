@@ -38,7 +38,7 @@
             <div class="column">
                 <div class="ui action input">
                     <input id="input_box" type="text" placeholder="Search...">
-                    <div onclick="request()" class="ui animated button" tabindex="0">
+                    <div id="input_btn" onclick="request()" class="ui animated button" tabindex="0">
                         <div class="visible content">Search</div>
                         <div class="hidden content">
                             <i class="search icon"></i>
@@ -84,6 +84,11 @@
     $('.ui.basic.modal')
             .modal('show');
 
+    $('#input_box').keypress(function (event) {
+        if (event.which == 13) {
+            $('#input_btn').click();
+        }
+    });
 
     var map;
     var data_set = [];
