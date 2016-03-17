@@ -74,7 +74,7 @@
     var data_set = [];
     var marker_list = [];
     var infowindow = null;
-    var socket = io(null, {port: location.port, rememberTransport: false});
+    var socket = io(location.protocol + '://' + location.hostname + ':' + location.port);
 
     var cur_keyword = "";
     var cur_page_number = 0;
