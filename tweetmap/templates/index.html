@@ -230,8 +230,8 @@
                     '<img src="' + val.user_profile_image + '"></a>' +
                     '<div class="content">' +
                     '<a target="_blank" href="https://twitter.com/' + val.username + '/" class="author">' + val.username + '</a>' +
-                    '<div class="metadata"><span class="date">' + new Date(val.timestamp_ms) + '</span></div>' +
-                    '<div class="text"><a target="_blank" href="https://twitter.com/' + val.username + '/status/' + val.tweet_id + '">' + polarity_tag + "  " + val.text + '</a></div>' +
+                    '<div class="metadata"><span class="date">' + new Date(parseInt(val.timestamp_ms)) + '</span></div>' +
+                    '<div class="text">' + polarity_tag + "  " + '<a target="_blank" href="https://twitter.com/' + val.username + '/status/' + val.tweet_id + '">' + val.text + '</a></div>' +
                     '</div></div>';
         });
         contentString += '</div>' +
