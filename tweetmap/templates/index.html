@@ -96,7 +96,9 @@
     var bounce_marker = null;
     var information_window = null;
     var socket = io('http://' + document.domain + ':' + location.port);
-
+    $(window).on('beforeunload', function(){
+        socket.close();
+    });
     var cur_keyword = "";
     var cur_page_number = 0;
     var search_coordinate = null;
