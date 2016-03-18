@@ -63,11 +63,10 @@ def sns_route():
                             'Timestamp', sns_msg[u'Timestamp'],
                             'Token', sns_msg[u'Token']])
         content.extend(['TopicArn', sns_msg[u'TopicArn'], 'Type', sns_msg[u'Type']])
-        pubkey.verify_update('\n'.join(content))
+        content = '\n'.join(content) + '\n'
+        pubkey.verify_update(content.encode('ascii'))
         if pubkey.verify_final(sns_msg[u'Signature'].decode('base64')) == 0:
             abort(400)
-        else:
-            print 'verify succeed!'
     else:
         abort(400)
 
