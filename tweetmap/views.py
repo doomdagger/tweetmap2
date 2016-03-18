@@ -5,7 +5,7 @@ from datetime import datetime
 from flask import render_template, request, abort
 from flask_socketio import emit
 from tweetmap import app, io, es, sns
-from M2Crypto import X509, EVP
+from M2Crypto import X509
 
 import json
 import requests
