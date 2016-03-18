@@ -5,8 +5,8 @@ from datetime import datetime
 from flask import render_template, request, abort
 from flask_socketio import emit
 from tweetmap import app, io, es, sns
+from M2Crypto import X509, EVP
 
-# import M2Crypto
 import json
 import requests
 
@@ -36,14 +36,38 @@ def sns_route():
     if u'x-amz-sns-message-type' not in request.headers:
         abort(400)
     message_type = request.headers[u'x-amz-sns-message-type']
+    if message_type not in ['Notification', 'SubscriptionConfirmation', 'UnsubscribeConfirmation']:
+        abort(400)
     # get parsed sns_msg
     sns_msg = request.get_json(force=True)
     if sns_msg is None:
         abort(400)
     # validate signature
     if u'SignatureVersion' in sns_msg and sns_msg[u'SignatureVersion'] == '1':
-        # TODO: validate message
-        pass
+        resp = requests.get(sns_msg[u'SigningCertURL'], stream=True)
+        cert = []
+        for chunk in resp.iter_content(chunk_size=1024):
+            if chunk:
+                cert.append(chunk)
+        x509 = X509.load_cert_string(''.join(cert))
+        pubkey = x509.get_pubkey()
+        pubkey.reset_context(md='sha1')
+        pubkey.verify_init()
+        content = ['Message', sns_msg[u'Message'], 'MessageId', sns_msg[u'MessageId']]
+        if message_type == 'Notification':
+            if u'Subject' in sns_msg and sns_msg[u'Subject'] is not None:
+                content.extend(['Subject', sns_msg[u'Subject']])
+            content.extend(['Timestamp', sns_msg[u'Timestamp']])
+        else:
+            content.extend(['SubscribeURL', sns_msg[u'SubscribeURL'],
+                            'Timestamp', sns_msg[u'Timestamp'],
+                            'Token', sns_msg[u'Token']])
+        content.extend(['TopicArn', sns_msg[u'TopicArn'], 'Type', sns_msg[u'Type']])
+        pubkey.verify_update('\n'.join(content))
+        if pubkey.verify_final(sns_msg[u'Signature'].decode('base64')) == 0:
+            abort(400)
+        else:
+            print 'verify succeed!'
     else:
         abort(400)
 
@@ -63,8 +87,6 @@ def sns_route():
         )
     elif message_type == 'UnsubscribeConfirmation':
         pass
-    else:
-        abort(400)
     return '', 204
 
 
