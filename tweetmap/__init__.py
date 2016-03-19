@@ -13,7 +13,7 @@ __author__ = "He Li"
 
 # make our app object
 app = Flask(__name__)
-io = SocketIO(app)
+io = SocketIO(app, logger=True)
 # config app
 app.secret_key = 'F12Zr47j\3yX R~X@H!jmM]Lwf/,?KT'
 # connect es
