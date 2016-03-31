@@ -4,6 +4,7 @@
 import json
 import logging
 import sys
+import time
 
 import boto3
 import langdetect
@@ -23,8 +24,8 @@ class MyStreamListener(tweepy.StreamListener):
         self.queue = boto3.resource('sqs').get_queue_by_name(QueueName='tweetmap')
 
     def on_status(self, status):
-        if status.coordinates is not None and status.coordinates[u'type'] == u'Point' and langdetect.detect(
-                status.text) == 'en':
+        if status.coordinates is not None and status.coordinates[u'type'] == u'Point' and status.place is not None \
+                and langdetect.detect(status.text) == 'en':
             # send message
             # noinspection PyBroadException
             try:
@@ -64,9 +65,15 @@ class MyDaemon(Daemon):
         self.myStream = tweepy.Stream(auth=auth, listener=MyStreamListener())
 
     def run(self):
-        # start to fetch tweets
-        self.myStream.filter(track=['job', 'phone', 'love', 'china', 'the', 'a',
-                                    'is', 'am', 'of', 'nyc', 'eat', 'friend', 'are'], async=False)
+        while True:
+            # start to fetch tweets
+            logging.info('Twitter Fetch Script start now...')
+            try:
+                self.myStream.filter(track=['job', 'phone', 'love', 'china', 'the', 'a',
+                                            'is', 'am', 'of', 'nyc', 'eat', 'friend', 'are'], async=False)
+            except Exception as e:
+                logging.error("error occurs: {err}, try to restart script".format(err=e))
+            time.sleep(5)
 
 
 # main logic
