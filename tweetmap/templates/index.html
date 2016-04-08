@@ -286,7 +286,7 @@
         message.contents().find('.header').text(data.text);
         message.show();
         setTimeout(function () {
-            message.hide(function () {
+            message.fadeOut(function () {
                 message.removeClass(data.type);
             });
         }, 2000)

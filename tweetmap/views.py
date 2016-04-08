@@ -78,9 +78,9 @@ def sns_route():
         cur_date = datetime.now()
         es.create(index='tweets-{y}.{m}.{d}'.format(y=cur_date.year, m=cur_date.month, d=cur_date.day),
                   doc_type='tweet', body=orig_msg)
-        emit('message',
-             {'text': 'new tweets have been indexed', 'type': 'info'},
-             broadcast=True)
+        io.emit('message',
+                {'text': 'new tweets have been indexed', 'type': 'info'},
+                broadcast=True)
     elif message_type == 'SubscriptionConfirmation':
         requests.get(sns_msg[u'SubscribeURL'])
         sns.confirm_subscription(
