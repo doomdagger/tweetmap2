@@ -16,6 +16,14 @@
             z-index: 1000;
         }
 
+        #floating_message {
+            top: 3%;
+            width: 50%;
+            left: 25%;
+            position: absolute;
+            z-index: 1000;
+        }
+
         #map {
             height: 100%;
         }
@@ -61,6 +69,15 @@
             </div>
         </div>
     </div>
+</div>
+
+<div id="floating_message" class="ui icon message" style="display: none;">
+  <i class="twitter icon"></i>
+  <div class="content">
+    <div class="header">
+      Have you heard about our mailing list?
+    </div>
+  </div>
 </div>
 
 <div id="map"></div>
@@ -259,6 +276,23 @@
             map: map
         });
     });
+
+    socket.on('message', function (data) {
+        var message = $('#floating_message:hidden');
+        if (message.length === 0) {
+            return;
+        }
+        message.addClass(data.type);
+        message.contents().find('.header').text(data.text);
+        message.show();
+        setTimeout(function () {
+            message.hide(function () {
+                message.removeClass(data.type);
+            });
+        }, 2000)
+
+    });
+
     socket.on('error', function (err) {
         console.log(err);
     });

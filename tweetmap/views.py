@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from flask import render_template, request, abort
+from flask import render_template, request, abort, session
 from flask_socketio import emit
 from tweetmap import app, io, es, sns
 from M2Crypto import X509
@@ -78,11 +78,14 @@ def sns_route():
         cur_date = datetime.now()
         es.create(index='tweets-{y}.{m}.{d}'.format(y=cur_date.year, m=cur_date.month, d=cur_date.day),
                   doc_type='tweet', body=orig_msg)
+        emit('message',
+             {'text': 'new tweets have been indexed', 'type': 'info'},
+             broadcast=True)
     elif message_type == 'SubscriptionConfirmation':
         requests.get(sns_msg[u'SubscribeURL'])
         sns.confirm_subscription(
-                TopicArn=sns_msg[u'TopicArn'],
-                Token=sns_msg[u'Token']
+            TopicArn=sns_msg[u'TopicArn'],
+            Token=sns_msg[u'Token']
         )
     elif message_type == 'UnsubscribeConfirmation':
         pass
@@ -124,7 +127,7 @@ def search_keywords(ops):
 #   coordinates: [[left_up_point][right_down_point]]
 # }
 @io.on('search geo')
-def search_keywords(ops):
+def search_geo(ops):
     if ops is None or u'coordinates' not in ops:
         emit('error', 'no coordinates specified')
     else:
