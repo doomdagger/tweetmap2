@@ -1,5 +1,4 @@
 # views for app & socket.io
-# Author: He Li, Haoxiang Xu
 
 from datetime import datetime
 
@@ -12,7 +11,7 @@ import json
 import requests
 
 page_size = 50
-
+__author__ = "He Li, Haoxiang Xu"
 
 @app.route('/')
 def index():
