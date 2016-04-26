@@ -12,7 +12,7 @@ import boto3
 import textblob
 from daemon import Daemon
 
-__author__ = 'He Li'
+__author__ = "He Li, Haoxiang Xu"
 thread_num = 5
 sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
 sns_topic_arn = 'arn:aws:sns:us-west-2:523930296417:tweetmap'
