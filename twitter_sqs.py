@@ -11,7 +11,7 @@ import langdetect
 import tweepy
 from daemon import Daemon
 
-__author__ = 'He Li'
+__author__ = "He Li, Haoxiang Xu"
 sqs_queue_url = 'https://sqs.us-west-2.amazonaws.com/523930296417/tweetmap'
 logging.basicConfig(filename='twitter_sqs.log', level=logging.INFO)
 
