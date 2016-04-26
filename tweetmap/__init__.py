@@ -9,7 +9,7 @@ from elasticsearch import Elasticsearch
 from flask import Flask
 from flask_socketio import SocketIO
 
-__author__ = "He Li"
+__author__ = "He Li, Haoxiang Xu"
 
 # make our app object
 app = Flask(__name__)
