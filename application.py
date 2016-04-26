@@ -5,7 +5,7 @@ import logging
 
 from tweetmap import app, io
 
-__author__ = "He Li"
+__author__ = "He Li, Haoxiang Xu"
 logging.basicConfig(filename='tweetmap2.log', level=logging.DEBUG)
 
 if __name__ == '__main__':
